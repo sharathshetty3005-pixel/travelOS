@@ -164,9 +164,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.03)',
   },
   btnWrapper: {
-    width: 110,
+    width: 125,
   },
   planBtn: {
     height: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 0,
   },
 });

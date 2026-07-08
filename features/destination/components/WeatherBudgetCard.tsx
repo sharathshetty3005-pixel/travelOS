@@ -84,7 +84,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
         <CustomText variant="caption" weight="700" color={colors.accentGold}>
           CLIMATE SUMMARY
         </CustomText>
-        <CustomText variant="title" weight="600" color="#FFFFFF" style={styles.sectionTitle}>
+        <CustomText variant="title" weight="600" color={colors.textPrimary} style={styles.sectionTitle}>
           Weather & Best Time
         </CustomText>
       </View>
@@ -93,10 +93,10 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
         <GlassCard style={styles.weatherCard}>
           <View style={styles.weatherHeader}>
             <View style={styles.weatherMain}>
-              <CustomText variant="display" weight="700" color="#FFFFFF">
+              <CustomText variant="display" weight="700" color={colors.textPrimary}>
                 {destination.weather.temp}°C
               </CustomText>
-              <CustomText variant="caption" color="rgba(255,255,255,0.7)">
+              <CustomText variant="caption" color={colors.textSecondary}>
                 Current condition: {destination.weather.condition}
               </CustomText>
             </View>
@@ -113,7 +113,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                   <CustomText variant="caption" color={colors.textSecondary}>
                     BEST MONTHS
                   </CustomText>
-                  <CustomText variant="caption" weight="600" color="#FFFFFF">
+                  <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                     {weatherSpecs.bestMonths}
                   </CustomText>
                 </View>
@@ -125,7 +125,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                   <CustomText variant="caption" color={colors.textSecondary}>
                     RAIN RISK
                   </CustomText>
-                  <CustomText variant="caption" weight="600" color="#FFFFFF">
+                  <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                     {weatherSpecs.rainRisk} average
                   </CustomText>
                 </View>
@@ -139,7 +139,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                   <CustomText variant="caption" color={colors.textSecondary}>
                     SUNRISE
                   </CustomText>
-                  <CustomText variant="caption" weight="600" color="#FFFFFF">
+                  <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                     {weatherSpecs.sunrise}
                   </CustomText>
                 </View>
@@ -151,7 +151,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                   <CustomText variant="caption" color={colors.textSecondary}>
                     SUNSET
                   </CustomText>
-                  <CustomText variant="caption" weight="600" color="#FFFFFF">
+                  <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                     {weatherSpecs.sunset}
                   </CustomText>
                 </View>
@@ -166,7 +166,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
         <CustomText variant="caption" weight="700" color={colors.accentGold}>
           SPENDING INDEX
         </CustomText>
-        <CustomText variant="title" weight="600" color="#FFFFFF" style={styles.sectionTitle}>
+        <CustomText variant="title" weight="600" color={colors.textPrimary} style={styles.sectionTitle}>
           Budget Overview
         </CustomText>
       </View>
@@ -220,7 +220,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                 <CustomText variant="caption" color={colors.textSecondary}>
                   LODGING
                 </CustomText>
-                <CustomText variant="caption" weight="600" color="#FFFFFF">
+                <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                   {activeBudget.lodging}
                 </CustomText>
               </View>
@@ -232,7 +232,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                 <CustomText variant="caption" color={colors.textSecondary}>
                   MEALS & DINING
                 </CustomText>
-                <CustomText variant="caption" weight="600" color="#FFFFFF">
+                <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                   {activeBudget.food}
                 </CustomText>
               </View>
@@ -244,7 +244,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                 <CustomText variant="caption" color={colors.textSecondary}>
                   LOCAL TRANSIT
                 </CustomText>
-                <CustomText variant="caption" weight="600" color="#FFFFFF">
+                <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                   {activeBudget.transport}
                 </CustomText>
               </View>
@@ -256,7 +256,7 @@ export const WeatherBudgetCard = React.memo(function WeatherBudgetCard({
                 <CustomText variant="caption" color={colors.textSecondary}>
                   ACTIVITIES
                 </CustomText>
-                <CustomText variant="caption" weight="600" color="#FFFFFF">
+                <CustomText variant="caption" weight="600" color={colors.textPrimary}>
                   {activeBudget.activities}
                 </CustomText>
               </View>

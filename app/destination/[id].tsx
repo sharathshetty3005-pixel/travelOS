@@ -37,7 +37,7 @@ const NAVBAR_HEIGHT = 56;
 
 export default function DestinationDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, spacing, radii, shadow } = useAppTheme();
+  const { colors, spacing, radii, shadow, isDark } = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -94,8 +94,8 @@ export default function DestinationDetailsScreen() {
   // 1. Fallback Loading view
   if (loading) {
     return (
-      <View style={[styles.root, { backgroundColor: '#070709' }]}>
-        <StatusBar style="light" />
+      <View style={[styles.root, { backgroundColor: colors.backgroundPrimary }]}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <View style={styles.skeletonContainer}>
           <SkeletonLoader width="100%" height={HERO_HEIGHT} borderRadius={0} />
           <View style={[styles.skeletonInner, { paddingHorizontal: spacing.xlarge, gap: spacing.large }]}>
@@ -111,11 +111,11 @@ export default function DestinationDetailsScreen() {
   // 2. Fallback Error Recovery view
   if (!destination) {
     return (
-      <View style={[styles.root, { backgroundColor: '#070709', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }]}>
-        <StatusBar style="light" />
+      <View style={[styles.root, { backgroundColor: colors.backgroundPrimary, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }]}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <GlassCard style={styles.errorCard}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.error} />
-          <CustomText variant="body" weight="600" color="#FFFFFF" style={styles.errorTitle}>
+          <CustomText variant="body" weight="600" color={colors.textPrimary} style={styles.errorTitle}>
             Destination Not Found
           </CustomText>
           <CustomText variant="caption" color={colors.textSecondary} style={styles.errorSubtitle}>
@@ -135,8 +135,8 @@ export default function DestinationDetailsScreen() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: '#070709' }]}>
-      <StatusBar style="light" />
+    <View style={[styles.root, { backgroundColor: colors.backgroundPrimary }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* 1. Floating Collapsible Navigation Bar */}
       <Animated.View
