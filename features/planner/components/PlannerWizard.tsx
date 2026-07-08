@@ -1,316 +1,439 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Pressable, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Pressable, ScrollView, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 import { useAppTheme } from '@/theme';
 import { GlassCard } from '@/components/layout/GlassCard';
 import { CustomText } from '@/components/typography/CustomText';
-import { Button } from '@/components/input/Button';
-import { mockDestinations } from '@/mocks/destinations';
+import { TextField } from '@/components/input/TextField';
+import { mockDestinations, DestinationEntity } from '@/mocks/destinations';
+import { TripEntity, PackingItem } from '@/mocks/trips';
+import { AnimatedSpinner } from '@/components/feedback/AnimatedSpinner';
 
-export interface WizardData {
-  destinationId: string;
-  durationDays: number;
-  style: 'Backpacker' | 'Comfort' | 'Luxury';
-  interests: string[];
-}
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PlannerWizardProps {
-  initialDestinationId?: string;
-  onGenerate: (data: WizardData) => void;
+  onCompleteGeneration: (trip: TripEntity) => void;
 }
 
-const INTEREST_OPTIONS = [
-  { id: 'int-nature', label: 'Nature & Parks', icon: 'leaf-outline' },
-  { id: 'int-culinary', label: 'Food & Dining', icon: 'restaurant-outline' },
-  { id: 'int-culture', label: 'History & Culture', icon: 'library-outline' },
-  { id: 'int-adventure', label: 'Adventure Sports', icon: 'bonfire-outline' },
-  { id: 'int-relax', label: 'Relaxation & Spa', icon: 'sunny-outline' },
+const STYLES = [
+  { name: 'Nomad', icon: 'globe-outline', desc: 'Work-friendly spots, coffee shops, and local hideouts' },
+  { name: 'Adventure', icon: 'compass-outline', desc: 'Hikes, wild trails, raw sightseeing, and action' },
+  { name: 'Luxury', icon: 'ribbon-outline', desc: 'Premium hotels, Michelin dining, and yacht transfers' },
+  { name: 'Relaxing', icon: 'umbrella-outline', desc: 'Slow beach lounges, spa centers, and scenic vistas' },
 ];
 
 export const PlannerWizard = React.memo(function PlannerWizard({
-  initialDestinationId,
-  onGenerate,
+  onCompleteGeneration,
 }: PlannerWizardProps) {
-  const { colors, spacing, radii, isDark } = useAppTheme();
+  const { colors, spacing, radii, shadow } = useAppTheme();
 
-  // Wizard state hooks
-  const [selectedDestId, setSelectedDestId] = useState(
-    initialDestinationId || mockDestinations[0].id
-  );
-  const [duration, setDuration] = useState(4);
-  const [travelStyle, setTravelStyle] = useState<'Backpacker' | 'Comfort' | 'Luxury'>('Comfort');
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(['int-nature', 'int-culture']);
+  const [step, setStep] = useState(0);
+  const [selectedDest, setSelectedDest] = useState<DestinationEntity>(mockDestinations[0]);
+  const [style, setStyle] = useState('Nomad');
+  const [budgetStr, setBudgetStr] = useState('3000');
+  const [days, setDays] = useState(5);
+  const [genStatusText, setGenStatusText] = useState('Booting TravelOS AI...');
 
-  const handleInterestToggle = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
+  // Step 3 Loader transitions
+  useEffect(() => {
+    if (step !== 3) return;
 
-  const handleStyleSelect = (style: 'Backpacker' | 'Comfort' | 'Luxury') => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setTravelStyle(style);
-  };
+    const statuses = [
+      'Scanning local seasonal trends...',
+      `Curating ${style} highlights in ${selectedDest.title}...`,
+      'Generating seed packing checklists...',
+      'Mapping offline GPS topological guides...',
+      'Finalizing flight and ryokan coordinates...',
+    ];
 
-  const handleDurationChange = (change: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setDuration((prev) => Math.min(Math.max(prev + change, 1), 7));
-  };
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < statuses.length - 1) {
+        index++;
+        setGenStatusText(statuses[index]);
+      } else {
+        clearInterval(interval);
+        generateTripObject();
+      }
+    }, 800);
 
-  const handleSubmit = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    onGenerate({
-      destinationId: selectedDestId,
-      durationDays: duration,
-      style: travelStyle,
-      interests: selectedInterests,
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const generateTripObject = () => {
+    // 1. Compute Start & End Date
+    const start = new Date();
+    start.setDate(start.getDate() + 10); // Starts in 10 days
+    const end = new Date(start);
+    end.setDate(end.getDate() + days);
+
+    const startDateStr = start.toISOString().split('T')[0];
+    const endDateStr = end.toISOString().split('T')[0];
+
+    // 2. Generate custom packing lists based on destination type & style
+    const packing: PackingItem[] = [
+      { id: 'pack-gen-01', name: 'Valid Passport & Visa', category: 'Documents', packed: false, quantity: 1, priority: 'high', spaceWeight: 1 },
+      { id: 'pack-gen-02', name: `${selectedDest.currencyCode} Cash Reserve`, category: 'Essentials', packed: false, quantity: 1, priority: 'high', spaceWeight: 1 },
+    ];
+
+    if (selectedDest.id === 'dest-reykjavik') {
+      packing.push(
+        { id: 'pack-gen-03', name: 'Thermal Windbreaker Jacket', category: 'Clothing', packed: false, quantity: 1, priority: 'high', spaceWeight: 5 },
+        { id: 'pack-gen-04', name: 'Hiking Boots', category: 'Clothing', packed: false, quantity: 1, priority: 'high', spaceWeight: 4 },
+        { id: 'pack-gen-05', name: 'Geothermal Swimwear', category: 'Clothing', packed: false, quantity: 1, priority: 'medium', spaceWeight: 2 }
+      );
+    } else {
+      packing.push(
+        { id: 'pack-gen-03', name: 'Linen Vacation Outfits', category: 'Clothing', packed: false, quantity: 4, priority: 'medium', spaceWeight: 3 },
+        { id: 'pack-gen-04', name: 'Sunglasses & Sun Hat', category: 'Clothing', packed: false, quantity: 1, priority: 'low', spaceWeight: 2 },
+        { id: 'pack-gen-05', name: 'Sunscreen Gel SPF 50', category: 'Toiletries', packed: false, quantity: 1, priority: 'high', spaceWeight: 2 }
+      );
+    }
+
+    if (style === 'Nomad') {
+      packing.push({ id: 'pack-gen-06', name: 'MacBook Pro & Charger', category: 'Electronics', packed: false, quantity: 1, priority: 'high', spaceWeight: 5 });
+    } else if (style === 'Adventure') {
+      packing.push({ id: 'pack-gen-06', name: 'Action Cam / GoPro', category: 'Electronics', packed: false, quantity: 1, priority: 'medium', spaceWeight: 3 });
+    } else {
+      packing.push({ id: 'pack-gen-06', name: 'Noise Cancelling Headphones', category: 'Electronics', packed: false, quantity: 1, priority: 'medium', spaceWeight: 4 });
+    }
+
+    // 3. Generate dynamic Day-by-Day schedule
+    const daysArray = Array.from({ length: days }).map((_, idx) => {
+      const dayNum = idx + 1;
+      if (dayNum === 1) {
+        return `Day 1: Arrival in ${selectedDest.title}, airport private transfer, hotel check-in and evening brief stroll.`;
+      }
+      if (dayNum === days) {
+        return `Day ${dayNum}: Final breakfast, checkout processing, souvenir shopping, and departure transfer.`;
+      }
+      // Middle days generated based on style
+      if (style === 'Adventure') {
+        return `Day ${dayNum}: Morning scenic trail hike, exploring ${selectedDest.highlights[idx % selectedDest.highlights.length]}, and outdoor camping dinner.`;
+      }
+      if (style === 'Luxury') {
+        return `Day ${dayNum}: Michelin-star lunch, VIP private yacht rental, shopping in boutique districts, and harbor sunset cocktails.`;
+      }
+      return `Day ${dayNum}: Coffee shop deep-work session, visiting historical monuments, and quiet local culinary explorations.`;
     });
+
+    const newTrip: TripEntity = {
+      id: `trip-gen-${Date.now()}`,
+      destinationId: selectedDest.id,
+      title: `${selectedDest.title} ${style} Odyssey`,
+      location: `${selectedDest.title}, ${selectedDest.country}`,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      status: 'active',
+      countdownDays: 10,
+      flight: {
+        airline: 'Premium Air',
+        flightNumber: `PA ${Math.floor(1000 + Math.random() * 9000)}`,
+        departureTime: '2:15 PM',
+        gate: 'B18',
+        seat: style === 'Luxury' ? '02A (First)' : '14K (Business)',
+        status: 'Scheduled',
+      },
+      hotel: {
+        name: style === 'Luxury' ? `The Grand Palace, ${selectedDest.title}` : `Nomad Lodges, ${selectedDest.title}`,
+        checkInDate: startDateStr,
+        roomType: style === 'Luxury' ? 'Sea View Penthouse' : 'Premium Double Studio',
+        confirmationCode: `CONF-${Math.floor(1000000 + Math.random() * 9000000)}`,
+      },
+      packingProgress: 0,
+      totalPackedItems: 0,
+      totalRequiredItems: packing.length,
+      documentStatus: {
+        passportValid: true,
+        visaApproved: true,
+        insuranceUploaded: false,
+      },
+      expenses: {
+        totalSpentUSD: 0,
+        budgetUSD: parseFloat(budgetStr) || 3000,
+      },
+      packingList: packing,
+      expenseList: [],
+      // Attached custom day-by-day plan so itinerary viewer can render it
+      ...({ itineraryDays: daysArray } as any),
+    };
+
+    onCompleteGeneration(newTrip);
   };
 
-  return (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
-      {/* 1. Destination Card Selection */}
-      <GlassCard style={[styles.sectionCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-        <CustomText variant="caption" weight="700" color={colors.accentGold}>
-          STEP 1
+  const handleNext = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setStep((prev) => prev + 1);
+  };
+
+  const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  // Step 0: Destination
+  if (step === 0) {
+    return (
+      <Animated.View entering={FadeIn} style={styles.container}>
+        <CustomText variant="caption" weight="700" color={colors.accentGold} style={styles.stepTitle}>
+          STEP 1: SELECT DESTINATION
         </CustomText>
-        <CustomText variant="body" weight="600" color={colors.textPrimary} style={styles.sectionTitle}>
-          Choose Your Retreat
-        </CustomText>
-        
-        <View style={styles.destinationList}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 16 }}>
           {mockDestinations.map((dest) => {
-            const isSelected = selectedDestId === dest.id;
+            const isSelected = selectedDest.id === dest.id;
             return (
               <Pressable
                 key={dest.id}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setSelectedDestId(dest.id);
-                }}
+                onPress={() => setSelectedDest(dest)}
                 style={[
-                  styles.destItem,
+                  styles.destCard,
                   {
                     borderColor: isSelected ? colors.accentGold : colors.border,
-                    backgroundColor: isSelected
-                      ? 'rgba(212, 175, 55, 0.08)'
-                      : 'rgba(255, 255, 255, 0.02)',
+                    backgroundColor: isSelected ? 'rgba(212,175,55,0.04)' : 'rgba(255,255,255,0.01)',
                     borderRadius: radii.m,
                   },
                 ]}
               >
+                <Image source={dest.coverImage} style={[styles.destImg, { borderRadius: radii.s }]} contentFit="cover" />
                 <View style={styles.destMeta}>
-                  <CustomText variant="label" weight="600" color={colors.textPrimary}>
+                  <CustomText variant="body" weight="700" color={colors.textPrimary}>
                     {dest.title}
                   </CustomText>
                   <CustomText variant="caption" color={colors.textSecondary}>
-                    {dest.country}
+                    {dest.country} • {dest.averageCost}
+                  </CustomText>
+                  <CustomText variant="caption" color={colors.accentGold} style={{ fontStyle: 'italic', fontSize: 9, marginTop: 4 }} numberOfLines={1}>
+                    "{dest.tagline}"
                   </CustomText>
                 </View>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />
-                )}
               </Pressable>
             );
           })}
-        </View>
-      </GlassCard>
+        </ScrollView>
+        <Pressable onPress={handleNext} style={[styles.nextBtn, { backgroundColor: colors.accentGold, borderRadius: radii.s }]}>
+          <CustomText variant="caption" weight="700" color="#000000">
+            CONTINUE TO STYLE
+          </CustomText>
+        </Pressable>
+      </Animated.View>
+    );
+  }
 
-      {/* 2. Duration Selector */}
-      <GlassCard style={[styles.sectionCard, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: spacing.medium }]}>
-        <CustomText variant="caption" weight="700" color={colors.accentGold}>
-          STEP 2
+  // Step 1: Style & Budget
+  if (step === 1) {
+    return (
+      <Animated.View entering={FadeIn} style={styles.container}>
+        <CustomText variant="caption" weight="700" color={colors.accentGold} style={styles.stepTitle}>
+          STEP 2: CHOOSE TRAVEL STYLE & BUDGET
         </CustomText>
-        <CustomText variant="body" weight="600" color={colors.textPrimary} style={styles.sectionTitle}>
-          Trip Length
-        </CustomText>
-        
-        <View style={styles.durationRow}>
-          <Pressable
-            onPress={() => handleDurationChange(-1)}
-            style={[styles.countBtn, { backgroundColor: colors.backgroundTertiary, borderRadius: radii.s }]}
-          >
-            <Ionicons name="remove" size={18} color={colors.textPrimary} />
-          </Pressable>
-          
-          <View style={styles.durationValueBox}>
-            <CustomText variant="title" weight="700" color={colors.textPrimary}>
-              {duration}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 16 }}>
+          <TextField
+            label="Trip Budget Limit (USD)"
+            value={budgetStr}
+            onChangeText={setBudgetStr}
+            keyboardType="number-pad"
+            prefixIcon="logo-usd"
+          />
+
+          <CustomText variant="caption" color={colors.textSecondary} style={{ fontSize: 9, letterSpacing: 0.5, marginTop: 10, marginBottom: 4 }}>
+            TRAVEL STYLE CATEGORY
+          </CustomText>
+          {STYLES.map((st) => {
+            const isSelected = style === st.name;
+            return (
+              <Pressable
+                key={st.name}
+                onPress={() => setStyle(st.name)}
+                style={[
+                  styles.styleCard,
+                  {
+                    borderColor: isSelected ? colors.accentGold : colors.border,
+                    backgroundColor: isSelected ? 'rgba(212,175,55,0.04)' : 'rgba(255,255,255,0.01)',
+                    borderRadius: radii.m,
+                  },
+                ]}
+              >
+                <View style={[styles.styleIconBox, { backgroundColor: colors.backgroundTertiary, borderRadius: radii.s }]}>
+                  <Ionicons name={st.icon as any} size={18} color={isSelected ? colors.accentGold : colors.textSecondary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <CustomText variant="body" weight="700" color={colors.textPrimary}>
+                    {st.name}
+                  </CustomText>
+                  <CustomText variant="caption" color={colors.textSecondary} style={{ fontSize: 9, lineHeight: 12 }}>
+                    {st.desc}
+                  </CustomText>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        <View style={styles.btnRow}>
+          <Pressable onPress={handleBack} style={[styles.backBtn, { borderColor: colors.border, borderRadius: radii.s }]}>
+            <CustomText variant="caption" weight="700" color={colors.textSecondary}>
+              BACK
             </CustomText>
+          </Pressable>
+          <Pressable onPress={handleNext} style={[styles.nextBtn, { flex: 1, backgroundColor: colors.accentGold, borderRadius: radii.s }]}>
+            <CustomText variant="caption" weight="700" color="#000000">
+              CONTINUE TO DURATION
+            </CustomText>
+          </Pressable>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  // Step 2: Duration
+  if (step === 2) {
+    return (
+      <Animated.View entering={FadeIn} style={styles.container}>
+        <CustomText variant="caption" weight="700" color={colors.accentGold} style={styles.stepTitle}>
+          STEP 3: SELECT TRIP DURATION
+        </CustomText>
+        <View style={styles.centerContainer}>
+          <GlassCard style={[styles.daysCard, shadow.sm]}>
             <CustomText variant="caption" color={colors.textSecondary}>
-              {duration === 1 ? 'day' : 'days'}
+              TOTAL DURATION
             </CustomText>
-          </View>
-          
-          <Pressable
-            onPress={() => handleDurationChange(1)}
-            style={[styles.countBtn, { backgroundColor: colors.backgroundTertiary, borderRadius: radii.s }]}
-          >
-            <Ionicons name="add" size={18} color={colors.textPrimary} />
+            <CustomText variant="display" weight="700" color={colors.textPrimary} style={{ marginVertical: 8 }}>
+              {days} Days
+            </CustomText>
+            <View style={styles.counterRow}>
+              <Pressable
+                onPress={() => setDays((prev) => Math.max(prev - 1, 1))}
+                style={[styles.counterBtn, { borderColor: colors.border, borderRadius: radii.capsule }]}
+              >
+                <Ionicons name="remove" size={20} color={colors.textPrimary} />
+              </Pressable>
+              <Pressable
+                onPress={() => setDays((prev) => Math.min(prev + 1, 14))}
+                style={[styles.counterBtn, { borderColor: colors.border, borderRadius: radii.capsule }]}
+              >
+                <Ionicons name="add" size={20} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+          </GlassCard>
+        </View>
+        <View style={styles.btnRow}>
+          <Pressable onPress={handleBack} style={[styles.backBtn, { borderColor: colors.border, borderRadius: radii.s }]}>
+            <CustomText variant="caption" weight="700" color={colors.textSecondary}>
+              BACK
+            </CustomText>
+          </Pressable>
+          <Pressable onPress={handleNext} style={[styles.nextBtn, { flex: 1, backgroundColor: colors.accentGold, borderRadius: radii.s }]}>
+            <CustomText variant="caption" weight="700" color="#000000">
+              GENERATE AI ITINERARY
+            </CustomText>
           </Pressable>
         </View>
-      </GlassCard>
+      </Animated.View>
+    );
+  }
 
-      {/* 3. Style Selection */}
-      <GlassCard style={[styles.sectionCard, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: spacing.medium }]}>
-        <CustomText variant="caption" weight="700" color={colors.accentGold}>
-          STEP 3
+  // Step 3: Loading AI Generation
+  return (
+    <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.loaderContainer}>
+      <GlassCard style={styles.loaderCard}>
+        <AnimatedSpinner size={48} color={colors.accentGold} />
+        <CustomText variant="body" weight="700" color={colors.textPrimary} style={{ marginTop: 18 }}>
+          TRAVELOS AI ENGINE
         </CustomText>
-        <CustomText variant="body" weight="600" color={colors.textPrimary} style={styles.sectionTitle}>
-          Travel Style
+        <CustomText variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+          {genStatusText}
         </CustomText>
-        
-        <View style={[styles.styleRow, { gap: spacing.tiny }]}>
-          {(['Backpacker', 'Comfort', 'Luxury'] as const).map((styleOption) => {
-            const isSelected = travelStyle === styleOption;
-            return (
-              <Pressable
-                key={styleOption}
-                onPress={() => handleStyleSelect(styleOption)}
-                style={[
-                  styles.styleBtn,
-                  {
-                    flex: 1,
-                    borderColor: isSelected ? colors.accentGold : colors.border,
-                    backgroundColor: isSelected
-                      ? 'rgba(212, 175, 55, 0.08)'
-                      : 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: radii.s,
-                  },
-                ]}
-              >
-                <CustomText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? colors.accentGold : colors.textSecondary}
-                >
-                  {styleOption}
-                </CustomText>
-              </Pressable>
-            );
-          })}
-        </View>
       </GlassCard>
-
-      {/* 4. Interests Selector */}
-      <GlassCard style={[styles.sectionCard, { backgroundColor: colors.cardBg, borderColor: colors.border, marginTop: spacing.medium }]}>
-        <CustomText variant="caption" weight="700" color={colors.accentGold}>
-          STEP 4
-        </CustomText>
-        <CustomText variant="body" weight="600" color={colors.textPrimary} style={styles.sectionTitle}>
-          Curated Interests
-        </CustomText>
-        
-        <View style={styles.chipsGrid}>
-          {INTEREST_OPTIONS.map((interest) => {
-            const isSelected = selectedInterests.includes(interest.id);
-            return (
-              <Pressable
-                key={interest.id}
-                onPress={() => handleInterestToggle(interest.id)}
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: isSelected ? colors.accentGold : colors.border,
-                    backgroundColor: isSelected
-                      ? 'rgba(212, 175, 55, 0.08)'
-                      : 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: radii.capsule,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={interest.icon as any}
-                  size={12}
-                  color={isSelected ? colors.accentGold : colors.textSecondary}
-                />
-                <CustomText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? colors.accentGold : colors.textSecondary}
-                  style={styles.chipText}
-                >
-                  {interest.label}
-                </CustomText>
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassCard>
-
-      {/* Submit Action */}
-      <View style={{ marginTop: spacing.large, marginBottom: spacing.huge }}>
-        <Button label="GENERATE AI ITINERARY" onPress={handleSubmit} />
-      </View>
-    </ScrollView>
+    </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 16,
+    flex: 1,
+    width: '100%',
   },
-  sectionCard: {
-    padding: 16,
-    borderWidth: 0.5,
-  },
-  sectionTitle: {
-    marginTop: 4,
+  stepTitle: {
+    letterSpacing: 1.5,
     marginBottom: 16,
   },
-  destinationList: {
-    gap: 10,
-  },
-  destItem: {
+  destCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
+    padding: 10,
     borderWidth: 1,
+  },
+  destImg: {
+    width: 60,
+    height: 60,
   },
   destMeta: {
     flex: 1,
+    marginLeft: 12,
   },
-  durationRow: {
-    flexDirection: 'row',
+  nextBtn: {
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    marginTop: 12,
   },
-  countBtn: {
+  backBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginRight: 12,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+  },
+  styleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderWidth: 1,
+  },
+  styleIconBox: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  daysCard: {
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
+  },
+  counterRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 12,
+  },
+  counterBtn: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  durationValueBox: {
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  styleRow: {
-    flexDirection: 'row',
-  },
-  styleBtn: {
-    paddingVertical: 10,
-    alignItems: 'center',
     borderWidth: 1,
   },
-  chipsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
   },
-  chipText: {
-    marginLeft: 6,
+  loaderCard: {
+    padding: 32,
+    alignItems: 'center',
+    width: '100%',
   },
 });
