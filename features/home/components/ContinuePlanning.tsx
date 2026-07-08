@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 
@@ -16,11 +17,13 @@ export const ContinuePlanning = React.memo(function ContinuePlanning({
   trip,
 }: ContinuePlanningProps) {
   const { colors, spacing, radii } = useAppTheme();
+  const router = useRouter();
 
   if (!trip) return null; // Only render if there's a draft/upcoming trip
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push({ pathname: '/planner', params: { destId: trip.destinationId } } as any);
   };
 
   return (
@@ -43,10 +46,10 @@ export const ContinuePlanning = React.memo(function ContinuePlanning({
             <CustomText variant="caption" weight="700" color={colors.textSecondary}>
               CONTINUE PLANNING
             </CustomText>
-            <CustomText variant="label" weight="600" color="#FFFFFF" style={styles.tripTitle}>
+            <CustomText variant="label" weight="600" color={colors.textPrimary} style={styles.tripTitle}>
               {trip.title}
             </CustomText>
-            <CustomText variant="caption" color="rgba(255,255,255,0.6)">
+            <CustomText variant="caption" color={colors.textSecondary}>
               Itinerary: {trip.packingProgress}% complete • Departs in {trip.countdownDays} days
             </CustomText>
           </View>

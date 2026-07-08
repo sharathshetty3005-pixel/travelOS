@@ -83,7 +83,7 @@ export const Button = React.memo(function Button({
         return {
           bg: colors.accentGold,
           border: 'transparent',
-          text: isDark ? 'rgb(10, 10, 12)' : 'rgb(247, 247, 249)',
+          text: '#1A1C20',
         };
     }
   };
